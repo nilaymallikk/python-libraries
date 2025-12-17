@@ -1,0 +1,39 @@
+import pandas as pd
+import numpy as np
+
+# 1. LOAD
+df = pd.read_csv('used_cars_raw.csv')
+print("--- Dirty Data Info ---")
+print(df.info()) # Notice 'Price' is an object (Text), not a number!
+
+# 2. DROP DUPLICATES
+# Real data often has double submissions. Kill them.
+df = df.drop_duplicates()
+print(f"\nDuplicates removed. Current shape: {df.shape}")
+
+# 3. FIX THE 'PRICE' COLUMN
+# Problem: Python sees "$10,000" as text. You can't do math on text.
+# Solution: Remove '$', remove ',', then convert to Number.
+df['Price'] = df['Price'].str.replace('$', '', regex=False) # Remove $
+df['Price'] = df['Price'].str.replace(',', '', regex=False) # Remove comma
+df['Price'] = pd.to_numeric(df['Price']) # Convert "10000" (text) to 10000 (number)
+
+# 4. HANDLE MISSING VALUES (Imputation)
+# Problem: We have NaNs.
+# Strategy: 
+# - For 'Price': Drop the row (If you don't know the price, the data is useless).
+# - For 'Kms_Driven': Fill with the average (mean) of the column.
+# - For 'Car_Name': Drop the row (Unknown car is useless).
+
+df = df.dropna(subset=['Price', 'Car_Name']) # Drop rows where Price or Name is missing
+
+mean_kms = df['Kms_Driven'].mean()
+df['Kms_Driven'] = df['Kms_Driven'].fillna(mean_kms) # Fill missing Kms with average
+
+# 5. SAVE CLEAN DATA
+print("\n--- Clean Data Info ---")
+print(df.info())
+print("\n", df.head())
+
+df.to_csv('used_cars_clean.csv', index=False)
+print("Data cleaned and saved.")
